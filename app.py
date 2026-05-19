@@ -12,6 +12,9 @@ from flask_cors import CORS
 from config import Config
 from api import api_bp
 
+import os
+os.makedirs("uploads", exist_ok=True)
+
 
 def create_app() -> Flask:
     app = Flask(
