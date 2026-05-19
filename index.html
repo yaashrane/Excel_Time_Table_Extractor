@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timetable Extractor Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="Timetable Extractor Pro">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img">
+            <path d="M6.5 3.75h11A2.75 2.75 0 0 1 20.25 6.5v11a2.75 2.75 0 0 1-2.75 2.75h-11A2.75 2.75 0 0 1 3.75 17.5v-11A2.75 2.75 0 0 1 6.5 3.75Zm0 1.5A1.25 1.25 0 0 0 5.25 6.5v2h13.5v-2a1.25 1.25 0 0 0-1.25-1.25h-11Zm-1.25 4.75v7.5c0 .69.56 1.25 1.25 1.25h11c.69 0 1.25-.56 1.25-1.25V10H5.25Zm3 2.25h2.5v2.25h-2.5v-2.25Zm4 0h3.5v2.25h-3.5v-2.25Zm-4 3.5h2.5V18h-2.5v-2.25Zm4 0h3.5V18h-3.5v-2.25Z" />
+          </svg>
+        </div>
+        <div>
+          <p class="brand-kicker">Faculty PDF tool</p>
+          <h1>Timetable Extractor</h1>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="themeToggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <span class="theme-glyph" aria-hidden="true"></span>
+        </button>
+        <button id="newUploadBtn" class="ghost-btn" type="button" hidden>
+          <span class="btn-icon upload-icon" aria-hidden="true"></span>
+          New Upload
+        </button>
+      </div>
+    </header>
+
+    <section id="uploadView" class="upload-view" aria-labelledby="uploadTitle">
+      <div class="upload-layout">
+        <div class="upload-copy">
+          <p class="eyebrow">Excel timetable extraction</p>
+          <h2 id="uploadTitle">Convert master timetable sheets into faculty-ready PDFs.</h2>
+          <p class="subtitle">
+            Upload the master Excel timetable, select a faculty code, and export an individual timetable with clean weekly structure.
+          </p>
+
+          <div class="upload-brief" aria-label="Workflow overview">
+            <div class="brief-item">
+              <span class="brief-number">01</span>
+              <span>Upload Excel</span>
+            </div>
+            <div class="brief-item">
+              <span class="brief-number">02</span>
+              <span>Select faculty</span>
+            </div>
+            <div class="brief-item">
+              <span class="brief-number">03</span>
+              <span>Export PDF</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Start here</p>
+              <h3>Master timetable file</h3>
+            </div>
+            <span class="file-limit">Max 16 MB</span>
+          </div>
+
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload master timetable Excel file">
+            <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+            <div class="dropzone-visual" aria-hidden="true">
+              <span class="sheet-glyph"></span>
+            </div>
+            <div class="dropzone-copy">
+              <h3>Drop your Excel file here</h3>
+              <p>or choose a file from this computer</p>
+            </div>
+            <button id="browseBtn" class="primary-btn" type="button">
+              <span class="btn-icon browse-icon" aria-hidden="true"></span>
+              Browse File
+            </button>
+            <p id="selectedFileName" class="selected-file">No file selected</p>
+          </div>
+
+          <div id="uploadStatus" class="status" role="status" aria-live="polite" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <main id="resultsView" class="results" hidden>
+      <aside class="sidebar" aria-label="Faculty list">
+        <div class="sidebar-header">
+          <div>
+            <p class="eyebrow">Detected faculty</p>
+            <h3>Faculty Codes</h3>
+          </div>
+          <span id="teacherCount" class="count-badge">0</span>
+        </div>
+
+        <label class="search-field" for="teacherSearch">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input type="search" id="teacherSearch" placeholder="Search code or name" autocomplete="off" />
+        </label>
+
+        <ul id="teacherList" class="teacher-list"></ul>
+      </aside>
+
+      <section class="content" aria-live="polite">
+        <div class="content-header">
+          <div>
+            <p class="eyebrow">Extracted timetable</p>
+            <h2 id="contentTitle">Welcome</h2>
+            <p id="contentSubtitle" class="muted"></p>
+          </div>
+          <button id="downloadPdfBtn" class="primary-btn disabled" type="button" disabled>
+            <span class="btn-icon download-icon" aria-hidden="true"></span>
+            Download PDF
+          </button>
+        </div>
+
+        <div id="summaryStats" class="summary-stats" hidden></div>
+        <div id="warnings" class="warnings" hidden></div>
+        <div id="timetableContainer" class="timetable-container"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="script.js"></script>
+</body>
+</html>
