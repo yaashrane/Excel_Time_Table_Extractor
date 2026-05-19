@@ -62,7 +62,7 @@
   --transition: 180ms ease;
 }
 
-/* Keep a light theme fallback (maps to dark values since UI is always dark) */
+/* Dark theme (explicit) */
 [data-theme="dark"] {
   color-scheme: dark;
   --bg: #0d0f1a;
@@ -86,6 +86,64 @@
   --violet: #a855f7;
   --shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
   --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(108, 99, 255, 0.25);
+  --shadow-teal: 0 0 20px rgba(0, 212, 170, 0.2);
+  --grad-sidebar: linear-gradient(180deg, #0f1120 0%, #0b0d1a 100%);
+}
+
+/* Light theme */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Backgrounds */
+  --bg: #f4f5fb;
+  --bg-band: #eceef8;
+  --surface: #ffffff;
+  --surface-raised: #f0f1fa;
+  --surface-soft: #e8eaf6;
+  --surface-2: #f7f8fd;
+
+  /* Text */
+  --ink: #1a1c2e;
+  --text: #3d4166;
+  --text-muted: #7986cb;
+
+  /* Borders */
+  --border: rgba(99, 120, 255, 0.15);
+  --border-strong: rgba(99, 120, 255, 0.28);
+
+  /* Brand colors — same vibrancy */
+  --primary: #5a52e8;
+  --primary-hover: #6c63ff;
+  --primary-soft: rgba(90, 82, 232, 0.1);
+
+  /* Teal accent */
+  --accent: #00b894;
+  --accent-soft: rgba(0, 184, 148, 0.12);
+
+  /* Supporting colors */
+  --gold: #e6a817;
+  --rose: #e8457a;
+  --violet: #8b3cf7;
+  --cyan: #06b6d4;
+  --teal: #00b894;
+  --danger: #e53e52;
+
+  /* Gradients */
+  --grad-primary: linear-gradient(135deg, #5a52e8 0%, #8b3cf7 100%);
+  --grad-accent: linear-gradient(135deg, #00b894 0%, #06b6d4 100%);
+  --grad-card-blue: linear-gradient(135deg, #eef0fd 0%, #f4f5fb 100%);
+  --grad-card-teal: linear-gradient(135deg, #e6faf7 0%, #f0fdfb 100%);
+  --grad-card-purple: linear-gradient(135deg, #f3eeff 0%, #f9f5ff 100%);
+  --grad-card-red: linear-gradient(135deg, #fff0f3 0%, #fff5f7 100%);
+  --grad-sidebar: linear-gradient(180deg, #f7f8fd 0%, #f0f1fa 100%);
+  --grad-topbar: linear-gradient(90deg, #ffffff 0%, #f7f8fd 100%);
+
+  /* Shadows */
+  --shadow: 0 24px 64px rgba(90, 82, 232, 0.12);
+  --shadow-soft: 0 8px 32px rgba(90, 82, 232, 0.08);
+  --shadow-glow: 0 0 20px rgba(90, 82, 232, 0.15);
+  --shadow-teal: 0 0 20px rgba(0, 184, 148, 0.15);
 }
 
 * {
@@ -104,8 +162,8 @@ body {
   color: var(--text);
   background: var(--bg);
   background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(108, 99, 255, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(0, 212, 170, 0.08) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 0%, rgba(108, 99, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(0, 212, 170, 0.06) 0%, transparent 50%);
 }
 
 button,
@@ -134,6 +192,10 @@ button {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem clamp(1rem, 3vw, 2.25rem);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+[data-theme="dark"] .topbar {
   background: rgba(13, 15, 26, 0.92);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(24px);
@@ -306,6 +368,12 @@ button {
   border-radius: 999px;
   background: var(--primary);
   box-shadow: inset -5px -3px 0 var(--surface-soft);
+}
+
+[data-theme="light"] .theme-glyph::before {
+  inset: 2px;
+  background: var(--primary);
+  box-shadow: inset -5px -3px 0 var(--surface-raised);
 }
 
 [data-theme="dark"] .theme-glyph::before {
