@@ -24,6 +24,11 @@ class Config:
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
 
+    # Session cookie settings (required for HTTPS on Render)
+    SESSION_COOKIE_SECURE   = os.environ.get("RENDER", False)  # True on Render
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+
     # Email / OTP settings
     MAIL_SERVER   = os.environ.get("MAIL_SERVER",   "smtp.gmail.com")
     MAIL_PORT     = int(os.environ.get("MAIL_PORT",  "587"))

@@ -10,9 +10,10 @@ import string
 import time
 import hashlib
 import json
+import os
 from pathlib import Path
 
-_USERS_FILE = Path(__file__).resolve().parent / "users.json"
+_USERS_FILE = Path(os.environ.get("USERS_FILE", str(Path(__file__).resolve().parent / "users.json")))
 
 # OTPs stay in-memory — ephemeral by design
 _otps: dict = {}

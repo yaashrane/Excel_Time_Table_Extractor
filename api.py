@@ -91,11 +91,9 @@ def register_send_otp():
     otp = store.create_otp(email, purpose="register", full_name=full_name)
     try:
         _send_otp_email(email, otp, "Extractify — Verify your email")
-        print(f"[MAIL OK] OTP sent to {email}", flush=True)
-        open("mail_log.txt", "a").write(f"SENT register OTP to {email}\n")
     except Exception as e:
-        print(f"[MAIL ERROR] {email}: {e}", flush=True)
-        open("mail_log.txt", "a").write(f"FAILED register OTP to {email}: {e}\nOTP was: {otp}\n")
+        current_app.logger.error(f"Email send failed for {email}: {e}")
+        return jsonify({"error": "Failed to send OTP email. Please try again."}), 500
     return jsonify({"ok": True, "message": "OTP sent to your email."})
 
 
@@ -143,11 +141,9 @@ def forgot_send_otp():
     otp = store.create_otp(email, purpose="reset")
     try:
         _send_otp_email(email, otp, "Extractify — Password reset code")
-        print(f"[MAIL OK] OTP sent to {email}", flush=True)
-        open("mail_log.txt", "a").write(f"SENT reset OTP to {email}\n")
     except Exception as e:
-        print(f"[MAIL ERROR] {email}: {e}", flush=True)
-        open("mail_log.txt", "a").write(f"FAILED reset OTP to {email}: {e}\nOTP was: {otp}\n")
+        current_app.logger.error(f"Email send failed for {email}: {e}")
+        return jsonify({"error": "Failed to send OTP email. Please try again."}), 500
     return jsonify({"ok": True, "message": "If that email is registered, an OTP has been sent."})
 
 
