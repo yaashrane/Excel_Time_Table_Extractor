@@ -9,7 +9,7 @@ services:
       - key: MAIL_SERVER
         value: smtp.gmail.com
       - key: MAIL_PORT
-        value: 587
+        value: 465
       - key: USERS_FILE
         value: /tmp/users.json
       - key: RENDER
