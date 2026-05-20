@@ -30,6 +30,7 @@
         <button id="themeToggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
           <span class="theme-glyph" aria-hidden="true"></span>
         </button>
+        <button id="logoutBtn" class="ghost-btn" type="button">Sign Out</button>
         <button id="newUploadBtn" class="ghost-btn" type="button" hidden>
           <span class="btn-icon upload-icon" aria-hidden="true"></span>
           New Upload
@@ -132,5 +133,15 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script src="script.js"></script>
+  <script>
+    // Redirect to login if session expired (catches direct URL access)
+    fetch('/api/me', { credentials: 'same-origin' })
+      .then(r => { if (!r.ok) window.location.href = '/login'; });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+      window.location.href = '/login';
+    });
+  </script>
 </body>
 </html>

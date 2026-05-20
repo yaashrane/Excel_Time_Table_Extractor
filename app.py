@@ -6,11 +6,11 @@ Run with:  python app.py
 
 import logging
 from pathlib import Path
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
 
 from config import Config
-from api import api_bp
+from api import api_bp, mail
 
 import os
 os.makedirs("uploads", exist_ok=True)
@@ -24,13 +24,18 @@ def create_app() -> Flask:
     )
     app.config.from_object(Config)
     Config.init_app()
+    mail.init_app(app)
 
     # CORS
-    CORS(app, resources={r"/api/*": {"origins": Config.CORS_ORIGINS}})
+    CORS(app, resources={r"/api/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
 
     # Logging
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.StreamHandler()]
+    )
+    app.logger.setLevel(logging.DEBUG)
 
     # Routes
     app.register_blueprint(api_bp)
@@ -38,7 +43,15 @@ def create_app() -> Flask:
     # Serve frontend
     @app.route("/")
     def index():
+        if not session.get("logged_in"):
+            return redirect(url_for("login_page"))
         return send_from_directory(app.static_folder, "index.html")
+
+    @app.route("/login")
+    def login_page():
+        if session.get("logged_in"):
+            return redirect(url_for("index"))
+        return send_from_directory(app.static_folder, "login.html")
 
     @app.errorhandler(413)
     def too_large(_):
@@ -52,6 +65,5 @@ def create_app() -> Flask:
 
 
 if __name__ == "__main__":
-    create_app().run(host="0.0.0.0", port=5000, debug=Config.DEBUG)
-
-app = create_app()
+    app = create_app()
+    app.run(host="0.0.0.0", port=5000, debug=Config.DEBUG)
