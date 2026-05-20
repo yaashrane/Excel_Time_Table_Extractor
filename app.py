@@ -73,6 +73,6 @@ def create_app() -> Flask:
 if __name__ == "__main__":
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=Config.DEBUG)
-
-# Module-level app for gunicorn: gunicorn app:app
-app = create_app()
+else:
+    # gunicorn imports this module, so create app at module level
+    app = create_app()
