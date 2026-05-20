@@ -44,7 +44,7 @@ class Config:
     # Parser tuning
     MAX_SCAN_ROWS = 80          # Rows to scan when detecting structure
     MIN_HEADER_CONFIDENCE = 0.55
-    DEBUG = True
+    DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
     @staticmethod
     def init_app():
