@@ -24,7 +24,6 @@ def create_app() -> Flask:
     )
     app.config.from_object(Config)
     Config.init_app()
-    mail.init_app(app)
 
     # CORS
     CORS(app, resources={r"/api/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)

@@ -5,21 +5,20 @@ RESTful endpoints for the Timetable Extractor.
 """
 
 from functools import wraps
+import os
+import requests
 from flask import Blueprint, jsonify, request, current_app, session
-from flask_mail import Mail, Message
 
 from timetable_engine import TimetableEngine
 from file_service import FileService
 import auth_store as store
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
-mail = Mail()
+mail = None  # kept for app.py import compatibility
 
-# Singleton instances (stateless)
+# Singleton instances
 _engine = TimetableEngine()
 _file_service = FileService()
-
-# In-memory cache of latest extraction (single-user demo).
 _cache = {"latest": None}
 
 
@@ -35,15 +34,24 @@ def login_required(f):
 
 
 def _send_otp_email(email: str, otp: str, subject: str) -> None:
-    msg = Message(
-        subject=subject,
-        recipients=[email],
-        body=(
-            f"Your Extractify verification code is: {otp}\n\n"
-            f"This code expires in 10 minutes. Do not share it with anyone."
-        ),
+    api_key     = os.environ.get("BREVO_API_KEY", "")
+    sender_email = os.environ.get("MAIL_USERNAME", "")
+    resp = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={"api-key": api_key, "Content-Type": "application/json"},
+        json={
+            "sender": {"name": "Extractify", "email": sender_email},
+            "to": [{"email": email}],
+            "subject": subject,
+            "textContent": (
+                f"Your Extractify verification code is: {otp}\n\n"
+                f"This code expires in 10 minutes. Do not share it with anyone."
+            ),
+        },
+        timeout=10,
     )
-    mail.send(msg)
+    if resp.status_code not in (200, 201):
+        raise Exception(f"Brevo error {resp.status_code}: {resp.text}")
 
 
 # ---------- LOGIN / LOGOUT ----------
