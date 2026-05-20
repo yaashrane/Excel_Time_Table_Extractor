@@ -6,7 +6,7 @@ Run with:  python app.py
 
 import logging
 from pathlib import Path
-from flask import Flask, send_from_directory, session, redirect, url_for
+from flask import Flask, send_from_directory, session, redirect, url_for, jsonify, current_app
 from flask_cors import CORS
 
 from config import Config
@@ -60,6 +60,12 @@ def create_app() -> Flask:
     @app.errorhandler(404)
     def not_found(_):
         return {"error": "Not found"}, 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        import traceback
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
     return app
 
