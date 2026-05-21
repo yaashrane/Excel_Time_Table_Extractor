@@ -530,7 +530,8 @@
   const countKinds = (schedule = []) => {
     const counts = { lecture: 0, lab: 0, tutorial: 0 };
     schedule.forEach((entry) => {
-      counts[normalizeKind(entry.kind)] += Number(entry.duration) || 1;
+      const k = normalizeKind(entry.kind);
+      counts[k] = (counts[k] || 0) + (Number(entry.duration) || 1);
     });
     return counts;
   };
@@ -553,6 +554,13 @@
   /* =========================================================
      TIMETABLE LOGIC
      ========================================================= */
+
+  const TUT_SUBJECTS = new Set(["maths", "mathematics", "iks", "indian knowledge system", "m2", "m1"]);
+
+  const isTutSubject = (subject) => {
+    const s = String(subject || "").toLowerCase().trim();
+    return TUT_SUBJECTS.has(s) || s.startsWith("m2") || s.startsWith("m1") || s.includes("maths") || s.includes("iks");
+  };
 
   const Timetable = {
     buildMatrix(schedule = []) {
@@ -592,30 +600,43 @@
       return span;
     },
 
+    // Groups by subject+division, combines batches into one row, separates L/T vs L/P
     loadRows(schedule = []) {
+      // key: subject|division
       const grouped = new Map();
 
       schedule.forEach((entry) => {
         const subject = entry.subject || "Untitled class";
-        const className = [entry.division, entry.batch].filter(Boolean).join(" / ") || "-";
-        const key = `${subject}|${className}`;
+        const division = entry.division || "-";
+        const batch = entry.batch || null;
+        const key = `${subject}|${division}`;
 
         if (!grouped.has(key)) {
-          grouped.set(key, { subject, className, lectures: 0, practicals: 0 });
+          grouped.set(key, { subject, division, batches: new Set(), lectures: 0, practicals: 0, tutorials: 0 });
         }
 
         const row = grouped.get(key);
+        if (batch) row.batches.add(batch);
         const duration = Number(entry.duration) || 1;
-        if (normalizeKind(entry.kind) === "lab") row.practicals += duration;
+        const kind = normalizeKind(entry.kind);
+        if (kind === "lab") row.practicals += duration;
+        else if (kind === "tutorial") row.tutorials += duration;
         else row.lectures += duration;
       });
 
-      const rows = [...grouped.values()].sort((a, b) =>
-        a.subject.localeCompare(b.subject) || a.className.localeCompare(b.className)
-      );
+      const rows = [...grouped.values()]
+        .sort((a, b) => a.subject.localeCompare(b.subject) || a.division.localeCompare(b.division))
+        .map((r) => ({
+          subject: r.subject,
+          className: [r.division, ...[...r.batches].sort()].filter(Boolean).join(" / "),
+          lectures: r.lectures,
+          practicals: r.practicals,
+          tutorials: r.tutorials,
+          isTut: isTutSubject(r.subject),
+        }));
 
       while (rows.length < 4) {
-        rows.push({ subject: "", className: "", lectures: "", practicals: "" });
+        rows.push({ subject: "", className: "", lectures: "", practicals: "", tutorials: "", isTut: false });
       }
 
       return rows;
@@ -801,6 +822,7 @@
       return el("div", { class: "faculty-sheet" }, [
         this.buildFormalTimetable(code, teacherData),
         this.buildLoadTable(teacherData.schedule || []),
+        this.buildSignatureRow(teacherData.name || code),
       ]);
     },
 
@@ -877,8 +899,24 @@
       return el("div", { class: "formal-tt-scroll" }, [table]);
     },
 
+    buildSignatureRow(facultyName) {
+      return el("div", { class: "signature-row" }, [
+        el("div", { class: "sig-block" }, [
+          el("div", { class: "sig-line" }),
+          el("div", { class: "sig-label" }, [facultyName]),
+          el("div", { class: "sig-title" }, ["Faculty Signature"]),
+        ]),
+        el("div", { class: "sig-block sig-right" }, [
+          el("div", { class: "sig-line" }),
+          el("div", { class: "sig-label" }, ["Dr. Umesh P. Mohril"]),
+          el("div", { class: "sig-title" }, ["HOD Signature"]),
+        ]),
+      ]);
+    },
+
     buildLoadTable(schedule) {
       const rows = Timetable.loadRows(schedule);
+      const hasTut = rows.some((r) => r.isTut && r.subject);
       const table = el("table", { class: "load-table", "aria-label": "Teaching load summary" });
       const tbody = el("tbody");
 
@@ -893,21 +931,25 @@
         el("th", {}, ["Subject Name"]),
         el("th", {}, ["Class"]),
         el("th", {}, ["L"]),
-        el("th", {}, ["P"]),
+        el("th", {}, [hasTut ? "T" : "P"]),
         el("th", {}, ["L"]),
-        el("th", {}, ["P"]),
+        el("th", {}, [hasTut ? "T" : "P"]),
         el("th", {}, ["Total"]),
       ]));
 
       rows.forEach((row) => {
+        const secondary = row.isTut ? row.tutorials : row.practicals;
+        const secStr = String(secondary || "");
+        const lecStr = String(row.lectures || "");
+        const total = row.subject ? String(Number(row.lectures || 0) + Number(secondary || 0)) : "";
         tbody.appendChild(el("tr", {}, [
           el("td", {}, [row.subject]),
           el("td", {}, [row.className]),
-          el("td", {}, [String(row.lectures)]),
-          el("td", {}, [String(row.practicals)]),
-          el("td", {}, [String(row.lectures)]),
-          el("td", {}, [String(row.practicals)]),
-          el("td", {}, [row.subject ? String(Number(row.lectures) + Number(row.practicals)) : ""]),
+          el("td", {}, [lecStr]),
+          el("td", {}, [secStr]),
+          el("td", {}, [lecStr]),
+          el("td", {}, [secStr]),
+          el("td", {}, [total]),
         ]));
       });
 
@@ -971,6 +1013,7 @@
       });
 
       const loadRows = this.buildPdfLoadRows(schedule);
+      const secLabel = loadRows.hasTut ? "T" : "P";
 
       doc.autoTable({
         startY: doc.lastAutoTable.finalY + 6,
@@ -982,9 +1025,9 @@
             { content: "Engaged", colSpan: 2 },
             { content: "Total", rowSpan: 2 },
           ],
-          ["L", "P", "L", "P"],
+          ["L", secLabel, "L", secLabel],
         ],
-        body: loadRows,
+        body: loadRows.rows,
         styles: {
           fontSize: 8,
           cellPadding: 1.8,
@@ -1001,6 +1044,31 @@
           1: { halign: "left" },
         },
       });
+
+      // Signature row
+      const sigY = doc.lastAutoTable.finalY + 14;
+      const facultyName = teacherData.name || code;
+      const hodName = "Dr. Umesh P. Mohril";
+      const sigLineW = 60;
+
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      // Faculty signature (left)
+      doc.line(14, sigY, 14 + sigLineW, sigY);
+      doc.setFontSize(8);
+      doc.setFont("times", "bold");
+      doc.setTextColor(17, 17, 17);
+      doc.text(facultyName, 14 + sigLineW / 2, sigY + 4, { align: "center" });
+      doc.setFont("times", "normal");
+      doc.text("Faculty Signature", 14 + sigLineW / 2, sigY + 8, { align: "center" });
+
+      // HOD signature (right)
+      const hodX = width - 14 - sigLineW;
+      doc.line(hodX, sigY, hodX + sigLineW, sigY);
+      doc.setFont("times", "bold");
+      doc.text(hodName, hodX + sigLineW / 2, sigY + 4, { align: "center" });
+      doc.setFont("times", "normal");
+      doc.text("HOD Signature", hodX + sigLineW / 2, sigY + 8, { align: "center" });
 
       doc.setFontSize(8);
       doc.setTextColor(120);
@@ -1071,14 +1139,16 @@
     },
 
     buildPdfLoadRows(schedule) {
-      return Timetable.loadRows(schedule).map((item) => {
-        if (item.subject === "") return ["", "", "", "", "", "", ""];
-
-        const lectures = String(item.lectures);
-        const practicals = String(item.practicals);
-        const total = String(Number(item.lectures) + Number(item.practicals));
-        return [item.subject, item.className, lectures, practicals, lectures, practicals, total];
-      });
+      const rows = Timetable.loadRows(schedule);
+      const hasTut = rows.some((r) => r.isTut && r.subject);
+      return { rows: rows.map((item) => {
+        if (!item.subject) return ["", "", "", "", "", "", ""];
+        const secondary = item.isTut ? item.tutorials : item.practicals;
+        const lec = String(item.lectures || 0);
+        const sec = String(secondary || 0);
+        const total = String(Number(item.lectures || 0) + Number(secondary || 0));
+        return [item.subject, item.className, lec, sec, lec, sec, total];
+      }), hasTut };
     },
   };
 
