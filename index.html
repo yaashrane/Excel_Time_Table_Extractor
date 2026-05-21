@@ -49,11 +49,29 @@
         <button id="themeToggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
           <span class="theme-glyph" aria-hidden="true"></span>
         </button>
-        <button id="logoutBtn" class="ghost-btn" type="button">Sign Out</button>
         <button id="newUploadBtn" class="ghost-btn" type="button" hidden>
           <span class="btn-icon upload-icon" aria-hidden="true"></span>
           New Upload
         </button>
+
+        <!-- Profile dropdown -->
+        <div class="profile-wrap" id="profileWrap">
+          <button class="profile-btn" id="profileBtn" type="button" aria-haspopup="true" aria-expanded="false">
+            <span class="avatar" id="avatarInitials"></span>
+            <span class="profile-name" id="profileName"></span>
+          </button>
+          <div class="profile-dropdown" id="profileDropdown" hidden>
+            <div class="dropdown-info">
+              <span class="dropdown-fullname" id="dropFullName"></span>
+              <span class="dropdown-email" id="dropEmail"></span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="openSettingsBtn" type="button">Settings</button>
+            <button class="dropdown-item" id="openAboutBtn" type="button">About</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" id="logoutBtn" type="button">Sign Out</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -151,16 +169,170 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsOverlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Settings</h3>
+        <button class="modal-close" id="closeSettingsBtn" type="button">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <p class="settings-section-title">Account</p>
+          <div id="changePwAlert" class="modal-alert" style="display:none"></div>
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <div class="pw-field">
+              <input type="password" id="currentPw" class="form-input" placeholder="Enter current password" />
+              <button type="button" class="toggle-pw-modal" onclick="toggleModalPw('currentPw',this)">&#128065;</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <div class="pw-field">
+              <input type="password" id="newPw" class="form-input" placeholder="At least 8 characters" />
+              <button type="button" class="toggle-pw-modal" onclick="toggleModalPw('newPw',this)">&#128065;</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <div class="pw-field">
+              <input type="password" id="confirmPw" class="form-input" placeholder="Re-enter new password" />
+              <button type="button" class="toggle-pw-modal" onclick="toggleModalPw('confirmPw',this)">&#128065;</button>
+            </div>
+          </div>
+          <button class="primary-btn" id="changePwBtn" type="button" style="width:100%">Update Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT MODAL -->
+  <div class="modal-overlay" id="aboutOverlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>About</h3>
+        <button class="modal-close" id="closeAboutBtn" type="button">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="about-logo">
+          <img src="/favicon.ico" width="48" height="48" />
+        </div>
+        <h2 class="about-title">Extractify</h2>
+        <p class="about-version">Version 1.0.0</p>
+        <p class="about-desc">Extractify is a smart timetable extraction tool that converts master Excel timetable sheets into clean, faculty-ready weekly schedules and exportable PDFs.</p>
+        <div class="about-features">
+          <div class="about-feature-item">&#10003; Automatic timetable structure detection</div>
+          <div class="about-feature-item">&#10003; Faculty-wise schedule generation</div>
+          <div class="about-feature-item">&#10003; Consecutive slot merging</div>
+          <div class="about-feature-item">&#10003; PDF export for individual faculty</div>
+          <div class="about-feature-item">&#10003; Secure login with OTP verification</div>
+        </div>
+        <p class="about-copy">&copy; 2025 Extractify. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
   <script src="script.js"></script>
   <script>
-    // Redirect to login if session expired (catches direct URL access)
+    // Auth check
     fetch('/api/me', { credentials: 'same-origin' })
-      .then(r => { if (!r.ok) window.location.href = '/login'; });
+      .then(r => r.json())
+      .then(data => {
+        if (!data.logged_in) { window.location.href = '/login'; return; }
+        const name  = data.full_name || '';
+        const email = data.email || '';
+        document.getElementById('avatarInitials').textContent = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+        document.getElementById('profileName').textContent = name.split(' ')[0];
+        document.getElementById('dropFullName').textContent = name;
+        document.getElementById('dropEmail').textContent = email;
+      })
+      .catch(() => window.location.href = '/login');
 
+    // Profile dropdown toggle
+    const profileBtn      = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = !profileDropdown.hidden;
+      profileDropdown.hidden = open;
+      profileBtn.setAttribute('aria-expanded', String(!open));
+    });
+    document.addEventListener('click', () => {
+      profileDropdown.hidden = true;
+      profileBtn.setAttribute('aria-expanded', 'false');
+    });
+
+    // Logout
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
       window.location.href = '/login';
     });
+
+    // Settings modal
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    document.getElementById('openSettingsBtn').addEventListener('click', () => {
+      profileDropdown.hidden = true;
+      settingsOverlay.hidden = false;
+    });
+    document.getElementById('closeSettingsBtn').addEventListener('click', () => settingsOverlay.hidden = true);
+    settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.hidden = true; });
+
+    // About modal
+    const aboutOverlay = document.getElementById('aboutOverlay');
+    document.getElementById('openAboutBtn').addEventListener('click', () => {
+      profileDropdown.hidden = true;
+      aboutOverlay.hidden = false;
+    });
+    document.getElementById('closeAboutBtn').addEventListener('click', () => aboutOverlay.hidden = true);
+    aboutOverlay.addEventListener('click', (e) => { if (e.target === aboutOverlay) aboutOverlay.hidden = true; });
+
+    // Change password
+    document.getElementById('changePwBtn').addEventListener('click', async () => {
+      const alert  = document.getElementById('changePwAlert');
+      const current = document.getElementById('currentPw').value;
+      const newPw   = document.getElementById('newPw').value;
+      const confirm = document.getElementById('confirmPw').value;
+      alert.style.display = 'none';
+
+      if (!current || !newPw || !confirm) { showModalAlert('changePwAlert', 'Please fill in all fields.', 'error'); return; }
+      if (newPw.length < 8) { showModalAlert('changePwAlert', 'New password must be at least 8 characters.', 'error'); return; }
+      if (newPw !== confirm) { showModalAlert('changePwAlert', 'Passwords do not match.', 'error'); return; }
+
+      const btn = document.getElementById('changePwBtn');
+      btn.disabled = true; btn.textContent = 'Updating...';
+      try {
+        const res = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ current_password: current, new_password: newPw }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showModalAlert('changePwAlert', 'Password updated successfully.', 'success');
+          document.getElementById('currentPw').value = '';
+          document.getElementById('newPw').value = '';
+          document.getElementById('confirmPw').value = '';
+        } else {
+          showModalAlert('changePwAlert', data.error || 'Failed to update password.', 'error');
+        }
+      } catch { showModalAlert('changePwAlert', 'Could not reach the server.', 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Update Password'; }
+    });
+
+    function showModalAlert(id, msg, type) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.className = 'modal-alert ' + type;
+      el.style.display = 'block';
+    }
+
+    function toggleModalPw(id, btn) {
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.textContent = input.type === 'password' ? '\u{1F441}' : '\u{1F648}';
+    }
   </script>
 </body>
 </html>
