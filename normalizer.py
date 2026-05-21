@@ -23,7 +23,8 @@ KNOWN_FACULTY = {
 
 BATCH_PREFIX = re.compile(r"^(?:CC)?([A-H]\d)\s*[-\u2013\u2014]\s*", re.IGNORECASE)
 BATCH_SPLIT = re.compile(r"(?<!\w)(?=(?:CC)?[A-H]\d\s*[-\u2013\u2014])", re.IGNORECASE)
-FACULTY_PAIR = re.compile(r"([^()&]+?)\s*\(([A-Z]{2,4})\)", re.IGNORECASE)
+FACULTY_PAIR = re.compile(r"([^()&\n]+?)\s*\(([A-Z]{2,4})\)", re.IGNORECASE)
+AMP_SPLIT = re.compile(r"\s*&\s*")
 PAREN_CONTENT = re.compile(r"\(([^()]*)\)")
 
 LAB_KEYWORDS = re.compile(r"\b(lab|laboratory|workshop|prac(tical)?)\b", re.IGNORECASE)
@@ -146,7 +147,25 @@ class CellNormalizer:
             batch = match.group(1).upper()
             original = original[match.end():].strip()
 
+        # Extract common room (last paren that is not a faculty code)
         room, body = self._extract_common_room(original)
+
+        # Handle "SubjA(FAC1) & SubjB(FAC2)" patterns with shared room
+        if "&" in body:
+            parts = AMP_SPLIT.split(body)
+            entries: List[SubSlot] = []
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+                sub_entries = self._parse_faculty_pairs(part, batch, room, original)
+                if sub_entries:
+                    entries.extend(sub_entries)
+                else:
+                    entries.extend(self._fallback_entry(part, batch, room))
+            if entries:
+                return entries
+
         entries = self._parse_faculty_pairs(body, batch, room, original)
 
         if entries:

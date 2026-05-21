@@ -46,19 +46,36 @@ class SlotMerger:
         while i < len(slots):
             current = dict(slots[i])
             current["_period_key"] = self._period_key(current.get("time", ""))
-            current["duration"] = 1
+            # Preserve pre-set duration from merged cells; only override if merging
+            if "duration" not in current:
+                current["duration"] = 1
             current["time_slots"] = [current.get("time")]
 
-            j = i + 1
-            while j < len(slots) and self._can_merge(current, slots[j]):
-                current["duration"] += 1
-                current["time_slots"].append(slots[j].get("time"))
-                current["_period_key"] = self._period_key(slots[j].get("time", ""))
-                j += 1
+            # Only attempt slot merging if duration is 1 (not already a merged cell)
+            if current["duration"] == 1:
+                j = i + 1
+                while j < len(slots) and self._can_merge(current, slots[j]):
+                    current["duration"] += 1
+                    current["time_slots"].append(slots[j].get("time"))
+                    current["_period_key"] = self._period_key(slots[j].get("time", ""))
+                    j += 1
+            else:
+                j = i + 1
 
-            if current["duration"] > 1:
+            if current["duration"] > 1 and len(current["time_slots"]) > 1:
                 current["time"] = self._merged_time_label(current["time_slots"])
                 current["time_end"] = current["time"].split(" - ")[-1]
+            elif current["duration"] > 1:
+                # Pre-set duration from merged cell — compute time label from period index
+                key = self._period_key(current.get("time", ""))
+                start_idx = next((i for i, p in enumerate(self.PERIODS) if p["key"] == key), None)
+                if start_idx is not None:
+                    end_idx = start_idx + current["duration"] - 1
+                    if end_idx < len(self.PERIODS):
+                        end_period = self.PERIODS[end_idx]
+                        start_period = self.PERIODS[start_idx]
+                        current["time"] = f"{start_period['start']} - {end_period['end']}"
+                        current["time_end"] = end_period["end"]
 
             current.pop("_period_key", None)
             merged.append(current)

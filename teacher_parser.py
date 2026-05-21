@@ -6,7 +6,6 @@ from typing import Dict, List
 from slot_merger import SlotMerger
 
 
-# (Keep FACULTY_DIRECTORY as before...)
 FACULTY_DIRECTORY = {
     "UPM": "Dr. Umesh Moharil", "MRY": "Dr. Meghna Yashwante",
     "MDB": "Ms. Manisha Bhise", "AGP": "Dr. Amita Pal",
@@ -36,6 +35,7 @@ class TeacherIndex:
         index: Dict[str, List[dict]] = defaultdict(list)
 
         for slot in timetable:
+            slot_duration = slot.get("duration", 1)
             for entry in slot.get("entries", []):
                 for code in entry.get("faculty", []):
                     index[code].append({
@@ -46,11 +46,11 @@ class TeacherIndex:
                         "subject": entry.get("subject"),
                         "room": entry.get("room"),
                         "kind": entry.get("kind"),
+                        "duration": entry.get("duration", slot_duration),
                     })
 
         result = {}
         for code, slots in index.items():
-            # Merge consecutive identical slots (handles 2-hour labs)
             merged = self.merger.merge(slots)
             merged.sort(key=lambda s: (
                 self.DAY_ORDER.index(s["day"]) if s["day"] in self.DAY_ORDER else 99,
