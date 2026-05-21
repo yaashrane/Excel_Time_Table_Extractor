@@ -213,6 +213,32 @@
       font-weight: 700;
     }
 
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper .form-input {
+      padding-right: 2.75rem;
+    }
+
+    .toggle-pw {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .toggle-pw:hover { color: var(--primary); }
+
+    .eye-icon { width: 18px; height: 18px; }
+
     @media (max-width: 820px) {
       .login-layout {
         grid-template-columns: 1fr;
@@ -307,14 +333,10 @@
 
               <div class="form-group">
                 <label class="form-label" for="loginPassword">Password</label>
-                <input
-                  type="password"
-                  id="loginPassword"
-                  class="form-input"
-                  placeholder="Enter your password"
-                  autocomplete="current-password"
-                  required
-                />
+                <div class="password-wrapper">
+                  <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" autocomplete="current-password" required />
+                  <button type="button" class="toggle-pw" onclick="togglePw('loginPassword', this)" tabindex="-1"><svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
               </div>
 
               <div class="form-footer">
@@ -421,26 +443,18 @@
             <form id="registerPasswordForm" novalidate>
               <div class="form-group">
                 <label class="form-label" for="regPassword">Password</label>
-                <input
-                  type="password"
-                  id="regPassword"
-                  class="form-input"
-                  placeholder="At least 8 characters"
-                  autocomplete="new-password"
-                  required
-                />
+                <div class="password-wrapper">
+                  <input type="password" id="regPassword" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" required />
+                  <button type="button" class="toggle-pw" onclick="togglePw('regPassword', this)" tabindex="-1"><svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label" for="regPasswordConfirm">Confirm Password</label>
-                <input
-                  type="password"
-                  id="regPasswordConfirm"
-                  class="form-input"
-                  placeholder="Re-enter password"
-                  autocomplete="new-password"
-                  required
-                />
+                <div class="password-wrapper">
+                  <input type="password" id="regPasswordConfirm" class="form-input" placeholder="Re-enter password" autocomplete="new-password" required />
+                  <button type="button" class="toggle-pw" onclick="togglePw('regPasswordConfirm', this)" tabindex="-1"><svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
               </div>
 
               <button type="submit" class="primary-btn submit-btn">Complete Registration</button>
@@ -522,26 +536,18 @@
             <form id="forgotResetForm" novalidate>
               <div class="form-group">
                 <label class="form-label" for="forgotPassword">New Password</label>
-                <input
-                  type="password"
-                  id="forgotPassword"
-                  class="form-input"
-                  placeholder="At least 8 characters"
-                  autocomplete="new-password"
-                  required
-                />
+                <div class="password-wrapper">
+                  <input type="password" id="forgotPassword" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" required />
+                  <button type="button" class="toggle-pw" onclick="togglePw('forgotPassword', this)" tabindex="-1"><svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label" for="forgotPasswordConfirm">Confirm Password</label>
-                <input
-                  type="password"
-                  id="forgotPasswordConfirm"
-                  class="form-input"
-                  placeholder="Re-enter password"
-                  autocomplete="new-password"
-                  required
-                />
+                <div class="password-wrapper">
+                  <input type="password" id="forgotPasswordConfirm" class="form-input" placeholder="Re-enter password" autocomplete="new-password" required />
+                  <button type="button" class="toggle-pw" onclick="togglePw('forgotPasswordConfirm', this)" tabindex="-1"><svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
               </div>
 
               <button type="submit" class="primary-btn submit-btn">Reset Password</button>
@@ -555,6 +561,16 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script>
+    // Show/hide password toggle
+    function togglePw(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      btn.innerHTML = isHidden
+        ? '<svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        : '<svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
     const html = document.documentElement;
