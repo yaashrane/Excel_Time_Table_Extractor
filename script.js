@@ -1048,7 +1048,7 @@
       // Signature row
       const sigY = doc.lastAutoTable.finalY + 14;
       const facultyName = teacherData.name || code;
-      const hodName = "Dr. Umesh P. Mohril";
+      const hodName = "Dr. Umesh.P. Mohril";
       const sigLineW = 60;
 
       doc.setDrawColor(0);
