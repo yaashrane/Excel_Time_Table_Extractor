@@ -58,19 +58,47 @@ def _send_otp_email(email: str, otp: str, subject: str) -> None:
 
 @api_bp.route("/login", methods=["POST"])
 def login():
+
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
     data = request.get_json(force=True, silent=True) or {}
-    email    = (data.get("email") or "").strip().lower()
+
+    email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
+
     if not email or not password:
         return jsonify({"error": "Email and password are required."}), 400
+
+    # ===== ADMIN LOGIN =====
+    if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+        session["logged_in"] = True
+        session["email"] = email
+        session["full_name"] = "Admin"
+        session["is_admin"] = True
+
+        return jsonify({
+            "ok": True,
+            "full_name": "Admin",
+            "is_admin": True
+        })
+
+    # ===== NORMAL USER LOGIN =====
     if not store.check_password(email, password):
         return jsonify({"error": "Invalid email or password."}), 401
-    user = store.get_user(email)
-    session["logged_in"] = True
-    session["email"]     = email
-    session["full_name"] = user["full_name"]
-    return jsonify({"ok": True, "full_name": user["full_name"]})
 
+    user = store.get_user(email)
+
+    session["logged_in"] = True
+    session["email"] = email
+    session["full_name"] = user["full_name"]
+    session["is_admin"] = False
+
+    return jsonify({
+        "ok": True,
+        "full_name": user["full_name"],
+        "is_admin": False
+    })
 
 @api_bp.route("/logout", methods=["POST"])
 def logout():
@@ -81,7 +109,7 @@ def logout():
 @api_bp.route("/me", methods=["GET"])
 def me():
     if session.get("logged_in"):
-        return jsonify({"logged_in": True, "full_name": session.get("full_name")})
+        return jsonify({"logged_in": True, "full_name": session.get("full_name"), "email": session.get("email")})
     return jsonify({"logged_in": False}), 401
 
 
@@ -179,6 +207,21 @@ def forgot_reset():
         return jsonify({"error": msg}), 400
     store.consume_otp(email)
     store.update_password(email, password)
+    return jsonify({"ok": True})
+
+
+@api_bp.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    data     = request.get_json(force=True, silent=True) or {}
+    email    = session.get("email", "")
+    current  = data.get("current_password") or ""
+    new_pw   = data.get("new_password") or ""
+    if not store.check_password(email, current):
+        return jsonify({"error": "Current password is incorrect."}), 401
+    if len(new_pw) < 8:
+        return jsonify({"error": "Password must be at least 8 characters."}), 400
+    store.update_password(email, new_pw)
     return jsonify({"ok": True})
 
 
